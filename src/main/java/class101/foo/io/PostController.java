@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @RestController
 public class PostController {
 
@@ -15,10 +18,18 @@ public class PostController {
     @Autowired
     PostRepository postRepository;
 
+    @Autowired
+    Producer producer;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
     // 1. 글을 작성한다.
     @PostMapping("/post")
-    public Post createPost(@RequestBody Post post) {
-        return postRepository.save(post);
+    public Post createPost(@RequestBody Post post) throws JsonProcessingException {
+        String postMessage = objectMapper.writeValueAsString(post);
+        producer.sendTo(postMessage);
+        return post;
     }
 
     // 2. 글 목록을 페이징하여 반환
@@ -32,6 +43,7 @@ public class PostController {
     public Post findById(@PathVariable(name = "id") Long id) {
         return postRepository.findById(id).get();
     }
+
     // 4. 글 내용으로 검색 -> 해당 내용이 포함된 모든 글
     @GetMapping("/search")
     public List<Post> findPostsByContent(@RequestParam String content) {
